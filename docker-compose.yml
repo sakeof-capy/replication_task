@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres_primary:
+    build: ./primary
+    container_name: postgres_primary
+    restart: always
+    environment:
+      POSTGRES_USER: "${POSTGRES_APP_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_APP_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+      PGDATA: /var/lib/postgresql/data/pgdata  # Explicitly set the PGDATA directory to avoid conflicts
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data  # Named volume instead of absolute path
+    networks:
+      - postgres_network
+
+  postgres_secondary:
+    build: ./secondary
+    container_name: postgres_secondary
+    restart: always
+    environment:
+      POSTGRES_USER: "${POSTGRES_REPLICATOR_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_REPLICATOR_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+      PGDATA: /var/lib/postgresql/data/pgdata  # Explicitly set the PGDATA directory to avoid conflicts
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_secondary_data:/var/lib/postgresql/data  # Named volume instead of absolute path
+    networks:
+      - postgres_network
+    depends_on:
+      - postgres_primary
+
+volumes:
+  postgres_primary_data: {}
+  postgres_secondary_data: {}
+
+networks:
+  postgres_network:
+    driver: bridge
